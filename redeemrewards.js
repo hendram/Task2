@@ -5,7 +5,7 @@ const bodyParser = require('body-parser');
 // Middleware to parse JSON requests
 app.use(bodyParser.json());
 
-// Placeholder to store user and rewards data
+// Two main data objects (users and rewards) are used as placeholders to store user data and generated rewards.
 const users = {};
 const rewards = {};
 let requestedDate = 0;
@@ -15,7 +15,7 @@ let endOfWeek = 0;
 let year = 0;
 let month = 0;
 
-// Function to generate rewards for a specific week
+// Generates rewards for a specific week based on the provided start and end dates. Rewards are generated for each day within that week.
 function generateRewardsForWeek(startDate, endDate, id) {
   const rewardsForWeek = [];
   let currentDate = new Date(startDate);
@@ -40,9 +40,11 @@ function generateRewardsForWeek(startDate, endDate, id) {
   return rewardsForWeek;
 }
 
+// A function intended to determine the start and end of a week based on a given date. It operate based on a specified month, year, and requested date.
+// converted to UTC to get GMT + 0 before convert to ISO String format
 function requestDate() {
 for( let x = 1; x <= requestedDate && x <= 28; x= x+7){
-   console.log("value x "  + x); 
+    
     startOfWeek = new Date(atTime);
   startOfWeek.setDate(x); // Find possible first date
   startOfWeek.setMonth(month);
@@ -60,23 +62,24 @@ for( let x = 1; x <= requestedDate && x <= 28; x= x+7){
   endOfWeek.toUTCString();
   endOfWeek.setUTCHours(0, 0, 0, 0);
 
-   console.log("endofweek" + endOfWeek.toISOString());
-
-}
+   }
 }
 
-// Endpoint to get user rewards for a specific date
+// Handles requests to retrieve user rewards for a specific date.
+// Parses the at query parameter to extract the year and month.
+// Determines the days in the specified month.
+// Calls requestDate() to process and set the start and end of the week based on the specified date.
+// Checks if the user and rewards for that week exist, generating rewards if not already present, and returns the rewards for the specified week.
+
 app.get('/users/:user_id/rewards', (req, res) => {
   const userId = parseInt(req.params.user_id);
   atTime = new Date(req.query.at);
   atTime.toUTCString();
   year = atTime.getUTCFullYear();
-  console.log("fucking year" + year);
-  month = atTime.getUTCMonth();
+   month = atTime.getUTCMonth();
 
   const daysInMonth = new Date(year, month + 1, 0).getUTCDate();
   requestedDate = atTime.getUTCDate();
-  console.log("requestDate" + requestedDate);
   startOfMonth = new Date(year, month, 1);
   endOfMonth = new Date(year, month, daysInMonth);
 
@@ -97,8 +100,6 @@ else {
  startOfWeek.setUTCHours(0, 0, 0, 0);
 
   
-  console.log(startOfWeek);
-
    endOfWeek = new Date(startOfWeek);
   endOfWeek.setDate(startOfWeek.getUTCDate() + (daysInMonth % 4) - 1); // End of the last week 
   endOfWeek.setMonth(month);
@@ -106,8 +107,7 @@ else {
   endOfWeek.setHours(0, 0, 0);
   endOfWeek.toUTCString();
   endOfWeek.setUTCHours(0, 0, 0, 0);
-  console.log(endOfWeek.getDate());
-
+  
 }
 }
 
@@ -116,7 +116,7 @@ else {
 }
 
   const startOfWeekStr = startOfWeek.toISOString().split('T')[0] + 'T00:00:00Z';
-  console.log(startOfWeekStr);
+  
 
   // Check if user exists, if not, create a new user
   if (!users[userId]) {
@@ -129,7 +129,7 @@ else {
     rewards[startOfWeekStr] = rewardsForWeek;
   }
 
-console.log(rewards);
+
 
   // Return user rewards for the specific week
   res.json({
@@ -141,6 +141,10 @@ console.log(rewards);
   });
 });
 
+//Manages the redemption of rewards for a specific user and available date.
+//Parses the available date parameter and checks if the user exists.
+//Searches for the reward based on the provided available date and user ID within the stored rewards.
+//Validates the reward's expiration time against the current time and allows redemption if it has not expired.
 
 app.patch('/users/:user_id/rewards/:availableAt/redeem', (req, res) => {
   const userId = parseInt(req.params.user_id);
@@ -154,9 +158,7 @@ app.patch('/users/:user_id/rewards/:availableAt/redeem', (req, res) => {
 
 let foundKey = null;
 
- console.log('Rewards:', rewards);
-  console.log('Search Available At:', searchAvailableAt);
-
+ 
 if(!users[userId]){
        return res.status(404).json({ error: { message: 'User not found' } });
 }    
@@ -170,7 +172,6 @@ Object.keys(rewards).some(key => {
   }
 });
  
-console.log(foundKey + "foundKey");
  
   const rewardsForWeek = rewards[foundKey];
 
@@ -182,11 +183,9 @@ console.log(foundKey + "foundKey");
   const currentHours = currentTimes.getHours();
   const currentMinutes = currentTimes.getMinutes();
   const currentSeconds = currentTimes.getSeconds();
-  console.log(currentSeconds + " shit currentSeconds");
-  const currentTimex = currentTimes.toISOString();
+   const currentTimex = currentTimes.toISOString();
   const currentTime = currentTimex.split('T')[0] + 'T' + currentHours + ':' + currentMinutes + ':' + currentSeconds + 'Z';
-  console.log(currentTime + "nilai currentTime");
-
+  
   // Find the specific reward in the week's rewards
   const reward = rewardsForWeek.find(reward => reward.availableAt === searchAvailableAt);
 
